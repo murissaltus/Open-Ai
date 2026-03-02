@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 
 export const FoodGeneration = () => {
   const [prompt, setPrompt] = useState<string>(
-    "I just made a delicious plate of Spaghetti Carbonara using spaghetti, eggs, Parmesan cheese, pancetta, black pepper, garlic, and a pinch of salt. The sauce was rich and creamy without using any cream, thanks to the eggs and cheese. The pancetta added a perfect salty crunch, and the garlic brought everything together. It's one of those simple yet satisfying meals that always hits the spot.",
+    "I just made a delicious plate of Spaghetti Carbonara using spaghetti, eggs, Parmesan cheese, pancetta, black pepper, garlic, and a pinch of salt. The sauce was rich and creamy without using any cream, thanks to the eggs and cheese. The pancetta added a perfect salty crunch, and the garlic brought everything together. It's one of those simple yet satisfying meals that always hits the spot. Black plate",
   );
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [extractedInfo, setExtractedInfo] = useState<string[]>([]);
@@ -27,6 +27,36 @@ export const FoodGeneration = () => {
     setExtractedInfo([]);
 
     try {
+      const infoResponse = await fetch("/api/extract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      const infoResult = await infoResponse.json();
+
+      const outputText = infoResult || "";
+      console.log({ outputText });
+      //
+      const ingredients =
+        outputText.split(",").map((item: string) => item.trim()) || "";
+      //
+      setExtractedInfo(ingredients);
+      //step 2
+      const imageResponse = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      const imageResult = await imageResponse.json();
+      if (!imageResponse.ok || imageResult.error) {
+        setError("Failed to generate image");
+        return;
+      }
+      setResultImage(imageResult.image);
     } catch (error) {
       console.error("Error:", error);
       setError("Something went wrong. Please try again.");
@@ -47,7 +77,12 @@ export const FoodGeneration = () => {
           className="min-h-[120px]"
         />
 
-        <Button onClick={generateImageAndExtract} disabled={isLoading || !prompt.trim()} className="w-full" variant={isLoading ? "secondary" : "outline"}>
+        <Button
+          onClick={generateImageAndExtract}
+          disabled={isLoading || !prompt.trim()}
+          className="w-full"
+          variant={isLoading ? "secondary" : "outline"}
+        >
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -58,7 +93,9 @@ export const FoodGeneration = () => {
           )}
         </Button>
 
-        {error && <div className="p-2 text-red-500 rounded bg-red-50">{error}</div>}
+        {error && (
+          <div className="p-2 text-red-500 rounded bg-red-50">{error}</div>
+        )}
 
         <div className="mt-8">
           {isLoading ? (
@@ -76,7 +113,11 @@ export const FoodGeneration = () => {
               )}
               {resultImage && (
                 <div className="mb-6 overflow-hidden border rounded-lg">
-                  <img src={resultImage || "/placeholder.svg"} alt="Generated image" className="w-full h-auto" />
+                  <img
+                    src={resultImage || "/placeholder.svg"}
+                    alt="Generated image"
+                    className="w-full h-auto"
+                  />
                 </div>
               )}
             </div>
