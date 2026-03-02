@@ -24,6 +24,7 @@ export const POST = async (req: Request) => {
             {
               type: "input_image",
               image_url: `data:image/jpeg;base64,${image}`,
+              detail: "auto",
             },
           ],
         },
